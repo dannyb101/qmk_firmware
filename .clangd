@@ -31,3 +31,6 @@ Diagnostics:
             invalid_asm_value_for_constraint,
             anyx86_interrupt_attribute,
         ]
+InlayHints:
+    # Do not render virtual [index] = labels inside QMK keymap arrays.
+    Designators: false
