@@ -25,6 +25,8 @@ enum tap_dance_names {
     TD_L1_CW_TOGG
 };
 
+static bool td_l1_cw_togg_layer2_on;
+
 enum custom_keycodes {
     HEART_EMOJI = SAFE_RANGE
 };
@@ -50,8 +52,30 @@ const uint32_t PROGMEM unicode_map[] = {
     [THUMBS_UP] = 0x1F44D,     // 👍 Thumbs Up
 };
 
+// Single tap: enable Caps Word. Double tap: toggle layer 1. Hold: momentarily
+// enable layer 2; the reset callback turns it off when the key is released.
+void td_l1_cw_togg_finished(tap_dance_state_t *state, void *user_data) {
+    if (state->count == 1) {
+        if (state->pressed) {
+            layer_on(2);
+            td_l1_cw_togg_layer2_on = true;
+        } else {
+            caps_word_on();
+        }
+    } else if (state->count == 2) {
+        layer_invert(1);
+    }
+}
+
+void td_l1_cw_togg_reset(tap_dance_state_t *state, void *user_data) {
+    if (td_l1_cw_togg_layer2_on) {
+        layer_off(2);
+        td_l1_cw_togg_layer2_on = false;
+    }
+}
+
 tap_dance_action_t tap_dance_actions[] = {
-    [TD_L1_CW_TOGG] = ACTION_TAP_DANCE_LAYER_TOGGLE(CW_TOGG, 1),
+    [TD_L1_CW_TOGG] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, td_l1_cw_togg_finished, td_l1_cw_togg_reset),
 };
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -88,14 +112,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,             KC_Q,   KC_W,   KC_E,       KC_R,       KC_T,                                       KC_Y,                               KC_U,   KC_I,       KC_O,   KC_P,       KC_BSPC,
         TD(TD_L1_CW_TOGG),  KC_A,   KC_S,   KC_D,       KC_F,       KC_G,                                       KC_H,                               KC_J,   KC_K,       KC_L,   KC_SCLN,    KC_QUOT,
         KC_LSFT,            KC_Z,   KC_X,   KC_C,       KC_V,       KC_B,                                       KC_N,                               KC_M,   KC_COMM,    KC_DOT, KC_SLSH,    KC_ENT,
-                                            KC_LALT,    KC_LGUI,    MT(MOD_LCTL, KC_SPC),                       MT(MOD_RCTL | MOD_LSFT, KC_SPC),    MO(1),  MO(2)
+                                            KC_LALT,    KC_LGUI,    MT(MOD_LCTL, KC_SPC),                       MT(MOD_LCTL | MOD_LSFT, KC_SPC),    MO(1),  MO(2)
     ),
     [1] = LAYOUT(
         KC_GRV,     KC_F1,              KC_F2,          KC_NUHS,    KC_F4,              KC_F5,                  KC_MPLY,    KC_MPRV,        KC_MNXT,    KC_VOLD,        KC_VOLU,    KC_PLUS,
         _______,    UM(SLIGHT_SMILE),   UM(ROCKET),     UM(THANKS), UM(ONE_HUNDRED),    UM(APPROVED),           LCMD(KC_V), LOPT(KC_LEFT),  KC_UP,      LOPT(KC_RGHT),  KC_LBRC,    _______,
         _______,    UM(CELEBRATE),      HEART_EMOJI,    UM(FIRE),   UM(JOY),            XXXXXXX,                LCMD(KC_C), KC_LEFT,        KC_DOWN,    KC_RGHT,        KC_RBRC,    KC_BSLS,
         _______,    UM(SALUTE),         UM(HIGH_FIVE),  _______,    XXXXXXX,            XXXXXXX,                LCMD(KC_Z), LCMD(KC_LEFT),  XXXXXXX,    LCMD(KC_RGHT),  _______,    _______,
-                                                        _______,    _______,            _______,                _______,    MO(2),          _______
+                                                        _______,    _______,            _______,                QK_LLCK,    _______,        _______
     ),
     [2] = LAYOUT(
         _______,    _______,    _______,    _______,    _______,    _______,                                    _______,    _______,        LCAG(KC_UP),    _______,        _______,    _______,
